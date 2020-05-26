@@ -1,0 +1,68 @@
+<?php
+require_once('Classes/PHPExcel.php');
+require_once('Classes/PHPExcel/Writer/Excel5.php');
+$xls = new PHPExcel();
+$xls->setActiveSheetIndex(0);
+$sheet = $xls->getActiveSheet();
+$sheet->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+$sheet->setTitle('Список сотрудников отдела');
+
+$sheet->setCellValueByColumnAndRow(2,1, "Список сотрудников отдела");
+$sheet->setCellValueByColumnAndRow(2,3, "Отдел");
+$sheet->setCellValueByColumnAndRow(3,3, "Фамилия");
+$sheet->setCellValueByColumnAndRow(4,3, "Имя");
+$sheet->setCellValueByColumnAndRow(5,3, "Дата рождения");
+$sheet->setCellValueByColumnAndRow(6,3, "Должность");
+$sheet->getStyle("C1")->getFont()->getColor()->setRGB('000fff');
+$sheet->getStyle("C3:G3")->getFont()->getColor()->setRGB('ffffff');
+$bg = array(
+	'fill' => array(
+		'type' => PHPExcel_Style_Fill::FILL_SOLID,
+		'color' => array('rgb' => '1199cc')
+	)
+);
+$sheet->getStyle("C3:G3")->applyFromArray($bg);
+
+
+mysql_connect('localhost','root','');
+mysql_select_db('sotrzarpl');
+if (mysql_errno())
+{
+	echo 'Ошибка: не удалось установить соединение с базой данных.';
+	exit;
+}
+$result=mysql_query("select otdels.NameOtdel, sotr.LastName, sotr.FirstName, sotr.Date_R, sotr.Dolzn from sotr, otdels where otdels.idOtdel=sotr.Otdel order by otdels.NameOtdel, sotr.LastName, sotr.FirstName");
+$i=5;
+while ($row = mysql_fetch_row($result))
+{
+    if (($i % 2) == 0) {$bg = array(
+        'fill' => array(
+            'type' => PHPExcel_Style_Fill::FILL_SOLID,
+            'color' => array('rgb' => 'ccfccc')
+        )
+    );}
+	else {$bg = array(
+        'fill' => array(
+            'type' => PHPExcel_Style_Fill::FILL_SOLID,
+            'color' => array('rgb' => 'ecfcec')
+        )
+    );}
+    $sheet->getStyle("C$i:G$i")->applyFromArray($bg);
+    $sheet->getStyle("C$i:G$i")->getFont()->getColor()->setRGB('0000ff');
+    $sheet->setCellValueByColumnAndRow(2,$i, stripslashes($row[0]));
+    $sheet->setCellValueByColumnAndRow(3,$i, stripslashes($row[1]));
+    $sheet->setCellValueByColumnAndRow(4,$i, stripslashes($row[2]));
+    $sheet->setCellValueByColumnAndRow(5,$i, stripslashes($row[3]));
+    $sheet->setCellValueByColumnAndRow(6,$i, stripslashes($row[4]));
+    $i+=1;
+}
+$sheet->getColumnDimension('C')->setWidth(20);
+$sheet->getColumnDimension('D')->setWidth(20);
+$sheet->getColumnDimension('E')->setWidth(20);
+$sheet->getColumnDimension('F')->setWidth(20);
+$sheet->getColumnDimension('G')->setWidth(20);
+$sheet->getStyle()->getFont()->setBold(true);
+$objWriter = new PHPExcel_Writer_Excel5($xls);
+$objWriter->save('output.xls');
+echo "Ok...";
+?>
